@@ -988,7 +988,7 @@ SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend(
         // To ensure we have at least one node to expand, always include
         // current best node.
         if (child != search_->current_best_edge_ &&
-            search_->remaining_playouts_ < ((best_node_n - child.GetN())* params_.GetEdgeDiscardFactor())) {
+            search_->remaining_playouts_ < ((best_node_n - child.GetN()))) {
           continue;
         }
         // If play certain win and don't search other
@@ -1012,6 +1012,8 @@ SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend(
         }
         ++possible_moves;
       }
+
+	  
       float Q = child.GetQ(fpu);
 
       // Certainty Propagation. Avoid suboptimal childs.
@@ -1025,7 +1027,7 @@ SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend(
           if (child.edge()->IsOnlyUBounded()) Q -= child.GetN() * 0.1f;
         }
       }
-
+	  
       const float score = child.GetU(puct_mult) + Q;
       if (score > best) {
         second_best = best;
@@ -1036,6 +1038,12 @@ SearchWorker::NodeToProcess SearchWorker::PickNodeToExtend(
         second_best = score;
         second_best_edge = child;
       }
+	  
+	  // cut-off on EdgeDiscardFactor
+	  if ((child.GetN() > (search_->remaining_playouts_ / ((1 + depth)*(1 + depth)* params_.GetEdgeDiscardFactor())))) {
+		  continue;
+	  }
+
     }
 
     if (second_best_edge) {

@@ -232,7 +232,7 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<FloatOption>(kMinimumKLDGainPerNode, 0.0f, 1.0f) = 0.0f;
   options->Add<BoolOption>(kCertaintyPropagationId) = false;
   options->Add<BoolOption>(kTwoFoldDrawScoringId) = false;
-  options->Add<FloatOption>(kEdgeDiscardFactor, 1.0f, 5.0f) = 1.0f;
+  options->Add<FloatOption>(kEdgeDiscardFactor, 1.0f, 50.0f) = 1.0f;
 
   options->HideOption(kLogLiveStatsId);
 }
