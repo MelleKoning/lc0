@@ -103,6 +103,8 @@ class SelfPlayGame {
 
   // Training data to send.
   std::vector<V4TrainingData> training_data_;
+
+  std::unique_ptr<SyzygyTablebase> syzygy_tb_;
 };
 
 }  // namespace lczero

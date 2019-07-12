@@ -45,6 +45,11 @@ const OptionId kResignWDLStyleId{
 const OptionId kResignEarliestMoveId{"resign-earliest-move",
                                      "ResignEarliestMove",
                                      "Earliest move that resign is allowed."};
+const OptionId kSyzygyTablebaseId{
+    "syzygy-paths", "SyzygyPath",
+    "List of Syzygy tablebase directories, list entries separated by system "
+    "separator (\";\" for Windows, \":\" for Linux).",
+    's'};
 }  // namespace
 
 void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
@@ -52,6 +57,7 @@ void SelfPlayGame::PopulateUciParams(OptionsParser* options) {
   options->Add<BoolOption>(kResignWDLStyleId) = false;
   options->Add<FloatOption>(kResignPercentageId, 0.0f, 100.0f) = 0.0f;
   options->Add<IntOption>(kResignEarliestMoveId, 0, 1000) = 0;
+  options->Add<StringOption>(kSyzygyTablebaseId);
 }
 
 SelfPlayGame::SelfPlayGame(PlayerOptions player1, PlayerOptions player2,
@@ -72,6 +78,17 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
                         bool enable_resign) {
   bool blacks_move = false;
 
+  // Take syzygy tablebases from player1 options.
+  std::string tb_paths =
+      options_[0].uci_options->Get<std::string>(kSyzygyTablebaseId.GetId());
+  if (!tb_paths.empty()) {  // && tb_paths != tb_paths_) {
+    syzygy_tb_ = std::make_unique<SyzygyTablebase>();
+    CERR << "Loading Syzygy tablebases from " << tb_paths;
+    if (!syzygy_tb_->init(tb_paths)) {
+      CERR << "Failed to load Syzygy tablebases!";
+      syzygy_tb_ = nullptr;
+    }
+  }
   // Do moves while not end of the game. (And while not abort_)
   while (!abort_) {
     game_result_ = tree_[0]->GetPositionHistory().ComputeGameResult();
@@ -89,14 +106,15 @@ void SelfPlayGame::Play(int white_threads, int black_threads, bool training,
           std::chrono::steady_clock::now() +
           std::chrono::milliseconds(options_[idx].search_limits.movetime);
     }
+
     {
       std::lock_guard<std::mutex> lock(mutex_);
       if (abort_) break;
       search_ = std::make_unique<Search>(
           *tree_[idx], options_[idx].network, options_[idx].best_move_callback,
           options_[idx].info_callback, options_[idx].search_limits,
-          *options_[idx].uci_options, options_[idx].cache, nullptr);
-      // TODO: add Syzygy option for selfplay.
+          *options_[idx].uci_options, options_[idx].cache,
+          syzygy_tb_.get());  // nullptr);
     }
 
     // Do search.
