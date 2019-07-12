@@ -67,10 +67,10 @@ class SelfPlayGame {
 
   // Populate command line options that it uses.
   static void PopulateUciParams(OptionsParser* options);
-
+  
   // Starts the game and blocks until the game is finished.
   void Play(int white_threads, int black_threads, bool training,
-            bool enable_resign = true);
+	  SyzygyTablebase* syzygy_tb, bool enable_resign = true);
   // Aborts the game currently played, doesn't matter if it's synchronous or
   // not.
   void Abort();
@@ -83,7 +83,7 @@ class SelfPlayGame {
   // Gets the eval which required the biggest swing up to get the final outcome.
   // Eval is the expected outcome in the range 0<->1.
   float GetWorstEvalForWinnerOrDraw() const;
-
+  
  private:
   // options_[0] is for white player, [1] for black.
   PlayerOptions options_[2];
@@ -104,7 +104,6 @@ class SelfPlayGame {
   // Training data to send.
   std::vector<V4TrainingData> training_data_;
 
-  std::unique_ptr<SyzygyTablebase> syzygy_tb_;
 };
 
 }  // namespace lczero

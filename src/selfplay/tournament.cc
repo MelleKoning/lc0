@@ -62,6 +62,11 @@ const OptionId kVerboseThinkingId{"verbose-thinking", "VerboseThinking",
 const OptionId kResignPlaythroughId{
     "resign-playthrough", "ResignPlaythrough",
     "The percentage of games which ignore resign."};
+const OptionId kSyzygyTablebaseId{
+	"syzygy-paths", "SyzygyPath",
+	"List of Syzygy tablebase directories, list entries separated by system "
+	"separator (\";\" for Windows, \":\" for Linux).",
+	's' };
 
 }  // namespace
 
@@ -83,7 +88,7 @@ void SelfPlayTournament::PopulateOptions(OptionsParser* options) {
   options->Add<BoolOption>(kTrainingId) = false;
   options->Add<BoolOption>(kVerboseThinkingId) = false;
   options->Add<FloatOption>(kResignPlaythroughId, 0.0f, 100.0f) = 0.0f;
-
+  options->Add<StringOption>(kSyzygyTablebaseId);
   SelfPlayGame::PopulateUciParams(options);
 
   auto defaults = options->GetMutableDefaultsOptions();
@@ -167,6 +172,19 @@ SelfPlayTournament::SelfPlayTournament(const OptionsDict& options,
           "not clear when to stop search.");
     }
   }
+
+  // Take syzygy tablebases from options.
+  std::string tb_paths =
+	  options.Get<std::string>(kSyzygyTablebaseId.GetId());
+  if (!tb_paths.empty()) {
+	  syzygy_tb_ = std::make_unique<SyzygyTablebase>();
+	  CERR << "Loading Syzygy tablebases from " << tb_paths;
+	  if (!syzygy_tb_->init(tb_paths)) {
+		  CERR << "Failed to load Syzygy tablebases!";
+		  syzygy_tb_ = nullptr;
+	  }
+  }
+
 }
 
 void SelfPlayTournament::PlayOneGame(int game_number) {
@@ -243,7 +261,7 @@ void SelfPlayTournament::PlayOneGame(int game_number) {
 
   // PLAY GAME!
   game.Play(kThreads[color_idx[0]], kThreads[color_idx[1]], kTraining,
-            enable_resign);
+	  syzygy_tb_.get(), enable_resign );
 
   // If game was aborted, it's still undecided.
   if (game.GetGameResult() != GameResult::UNDECIDED) {
