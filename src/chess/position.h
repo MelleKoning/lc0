@@ -56,6 +56,10 @@ class Position {
   // Number of ply with no captures and pawn moves.
   int GetRule50Ply() const { return rule50_ply_; }
 
+  // Draw move rule: number of plies it takes with no Pawn move or capture
+  // before game is a regarded a draw
+  static void SetDrawMoveRule(int drawmoverule) { drawmoverule_ = drawmoverule; };
+  int GetDrawMoveRule() const { return drawmoverule_; }
   // Gets board from the point of view of player to move.
   const ChessBoard& GetBoard() const { return us_board_; }
   // Gets board from the point of view of opponent.
@@ -63,6 +67,7 @@ class Position {
 
   std::string DebugString() const;
 
+  
  private:
   // The board from the point of view of the player to move.
   ChessBoard us_board_;
@@ -71,10 +76,13 @@ class Position {
 
   // How many half-moves without capture or pawn move was there.
   int rule50_ply_ = 0;
+  // Number of moves till we call it a draw
+  static int drawmoverule_;
   // How many repetitions this position had before. For new positions it's 0.
   int repetitions_;
   // number of half-moves since beginning of the game.
   int ply_count_ = 0;
+
 };
 
 // These are ordered so max() prefers the best result.

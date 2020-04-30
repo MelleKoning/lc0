@@ -31,6 +31,7 @@
 
 #include "utils/exception.h"
 
+#include "chess/position.h"
 namespace lczero {
 
 namespace {
@@ -257,6 +258,12 @@ const OptionId SearchParams::kDrawScoreWhiteId{
 const OptionId SearchParams::kDrawScoreBlackId{
     "draw-score-black", "DrawScoreBlack",
     "Adjustment, added to a draw score of a black player."};
+const OptionId SearchParams::kDrawMoveRuleId{
+	"draw-move-rule", "DrawMoveRule",
+	"Used to adjust the default 50 move rule for analysis purposes. Factor of 100 (ply) is default "
+	"game is considered draw in case no pieces captured and no pawns have moved. Lowering this number will result either in more draws "
+	"or in more decisive moves in case engine thinks more than a draw is possible." };
+
 
 void SearchParams::Populate(OptionsParser* options) {
   // Here the uci optimized defaults" are set.
@@ -322,6 +329,7 @@ void SearchParams::Populate(OptionsParser* options) {
   options->Add<IntOption>(kDrawScoreOpponentId, -100, 100) = 0;
   options->Add<IntOption>(kDrawScoreWhiteId, -100, 100) = 0;
   options->Add<IntOption>(kDrawScoreBlackId, -100, 100) = 0;
+  options->Add<IntOption>(kDrawMoveRuleId, 1, 200) = 100;
 
   options->HideOption(kNoiseEpsilonId);
   options->HideOption(kNoiseAlphaId);
@@ -359,6 +367,7 @@ SearchParams::SearchParams(const OptionsDict& options)
       kNoiseAlpha(options.Get<float>(kNoiseAlphaId)),
       kFpuAbsolute(options.Get<std::string>(kFpuStrategyId) == "absolute"),
       kFpuValue(options.Get<float>(kFpuValueId)),
+      kDrawMoveRule(options.Get<int>(kDrawMoveRuleId)),
       kFpuAbsoluteAtRoot(
           (options.Get<std::string>(kFpuStrategyAtRootId) == "same" &&
            kFpuAbsolute) ||
@@ -397,7 +406,9 @@ SearchParams::SearchParams(const OptionsDict& options)
     throw Exception(
         "max{|sidetomove|+|opponent|} + max{|white|+|black|} draw score must "
         "be <= 100");
+    Position::SetDrawMoveRule(kDrawMoveRule);
   }
 }
 
+        
 }  // namespace lczero

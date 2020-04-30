@@ -31,6 +31,15 @@
 
 namespace lczero {
 
+// by default DrawMoveRule is 100 ply
+// this can be overwritten from Params initialization
+// for example when set to 40 the rule50_ply_ will
+// be positioned so that the position believes there are only
+// 40 ply left before draw kicks in instead of 100
+// Number of ply till we call it a draw
+ int Position::drawmoverule_ = 100;
+
+
 Position::Position(const Position& parent, Move m)
     : rule50_ply_(parent.rule50_ply_ + 1),
       ply_count_(parent.ply_count_ + 1) {
@@ -38,7 +47,7 @@ Position::Position(const Position& parent, Move m)
   const bool is_zeroing = them_board_.ApplyMove(m);
   us_board_ = them_board_;
   us_board_.Mirror();
-  if (is_zeroing) rule50_ply_ = 0;
+  if (is_zeroing) rule50_ply_ = 0 + (100 - drawmoverule_);
 }
 
 Position::Position(const ChessBoard& board, int rule50_ply, int game_ply)
@@ -73,7 +82,7 @@ GameResult PositionHistory::ComputeGameResult() const {
   }
 
   if (!board.HasMatingMaterial()) return GameResult::DRAW;
-  if (Last().GetRule50Ply() >= 100) return GameResult::DRAW;
+  if (Last().GetRule50Ply() >= Last().GetDrawMoveRule()) return GameResult::DRAW;
   if (Last().GetGamePly() >= 450) return GameResult::DRAW;
   if (Last().GetRepetitions() >= 2) return GameResult::DRAW;
 
